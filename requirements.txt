@@ -1,0 +1,8 @@
+jupyter
+nbgrader
+matplotlib
+ipympl
+nltk
+opencv-python
+numpy
+scipy
