@@ -1,5 +1,5 @@
 import string
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import numpy as np
 from collections import defaultdict
 from common.corpus import CorpusLoader
@@ -204,7 +204,6 @@ class BagOfWords(object):
         else:
                 limited_sorted_words = sorted_words
 
-        print(n_words , word_list , limited_sorted_words)
         return list(map(lambda item : item[0] , limited_sorted_words))
 
 
@@ -233,7 +232,7 @@ class WordListNormalizer(object):
         self.__delimiters = ["''", '``', '--']
 
 
-    def normalize_words(self, word_list):
+    def normalize_words(self, word_list : List[str]) -> Tuple[List[str] , List[str]]:
         """Normalisiert die gegebenen Woerter nach in der Methode angwendeten
         Filter-Regeln (Gross-/Kleinschreibung, stopwords, Satzzeichen, 
         Bindestriche und Anfuehrungszeichen, Stemming)
@@ -247,7 +246,25 @@ class WordListNormalizer(object):
                 angewandt. Bei der zweiten Liste wurde zusaetzlich auch stemming
                 angewandt.
         """
-        raise NotImplementedError()
+        stoplist = self.__stoplist
+        stoplist_set = set(stoplist)
+        result_1 = []
+        result_2 = []
+        to_exclude = set(["-" , "''" , '""'])
+        for word in word_list:
+            word = word.lower()
+            has_one_char = len({word}) == 1
+            if has_one_char and word[0] in to_exclude:
+                continue
+            if word in string.punctuation or word in stoplist_set or word.lower() in stoplist_set or word in to_exclude:
+                continue
+            stemmed_word : str = self.__stemmer.stem(word )
+            result_1.append(word)
+            result_2.append(stemmed_word)
+
+
+        print("result1" , result_1)
+        return result_1 , result_2
 
 
 
