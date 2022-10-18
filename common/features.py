@@ -246,6 +246,14 @@ class WordListNormalizer(object):
                 angewandt. Bei der zweiten Liste wurde zusaetzlich auch stemming
                 angewandt.
         """
+        def is_valid_word(word : str) -> bool:
+            has_one_char = len({word}) == 1
+            if has_one_char and word[0] in to_exclude:
+                return False
+            if word in string.punctuation or word in stoplist_set or word.lower() in stoplist_set or word in to_exclude:
+                return False
+            return True
+
         stoplist = self.__stoplist
         stoplist_set = set(stoplist)
         result_1 = []
@@ -253,14 +261,10 @@ class WordListNormalizer(object):
         to_exclude = set(["-" , "''" , '""'])
         for word in word_list:
             word = word.lower()
-            has_one_char = len({word}) == 1
-            if has_one_char and word[0] in to_exclude:
-                continue
-            if word in string.punctuation or word in stoplist_set or word.lower() in stoplist_set or word in to_exclude:
-                continue
-            stemmed_word : str = self.__stemmer.stem(word )
-            result_1.append(word)
-            result_2.append(stemmed_word)
+            if is_valid_word(word):
+                stemmed_word : str = self.__stemmer.stem(word)
+                result_1.append(word)
+                result_2.append(stemmed_word)
 
 
         print("result1" , result_1)
