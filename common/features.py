@@ -1,5 +1,5 @@
 import string
-from typing import List
+from typing import List, Optional
 import numpy as np
 from collections import defaultdict
 from common.corpus import CorpusLoader
@@ -177,7 +177,7 @@ class BagOfWords(object):
 
 
     @staticmethod
-    def most_freq_words(word_list : List[str], n_words : int =0) -> List[str]:
+    def most_freq_words(word_list : List[str], n_words : Optional[int] = None) -> List[str]:
         """Bestimmt die (n-)haeufigsten Woerter in einer Liste von Woertern.
         
         Params:
@@ -199,7 +199,12 @@ class BagOfWords(object):
                         word_to_freq_map[word] = 1
         sorted_words = sorted(word_to_freq_map.items() , key=lambda item : item[1])
         sorted_words.reverse()
-        limited_sorted_words = sorted_words[:n_words]
+        if n_words != None:
+                limited_sorted_words = sorted_words[:n_words]
+        else:
+                limited_sorted_words = sorted_words
+
+        print(n_words , word_list , limited_sorted_words)
         return list(map(lambda item : item[0] , limited_sorted_words))
 
 
