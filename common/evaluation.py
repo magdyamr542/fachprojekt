@@ -123,12 +123,8 @@ class ClassificationEvaluator(object):
         """
         self.__estimated_labels = estimated_labels
         self.__groundtruth_labels = groundtruth_labels
-        # 
-        # Bestimmen Sie hier die Uebereinstimmungen und Abweichungen der
-        # durch den Klassifikator bestimmten Labels und der tatsaechlichen 
-        # Labels
-        
-        raise NotImplementedError()
+        if self.__estimated_labels.shape != self.__groundtruth_labels.shape:
+            raise Exception("ground truth and estimated labels don't have the same shape")
 
         
 
@@ -145,7 +141,24 @@ class ClassificationEvaluator(object):
             n_wrong: Anzahl falsch klassifizierter Testbeispiele
             n_samples: Gesamtzahl von Testbeispielen
         """
-        raise NotImplementedError()
+        error_rate = 0
+        n_wrong = 0
+        n_samples = 0
+
+        if mask is None:
+            mask = [np.array([True]) for _ in self.__estimated_labels]
+
+        for actualLabel , predictedLabel , masked in zip(self.__groundtruth_labels , self.__estimated_labels , mask):
+            if not masked.item():
+                continue
+                
+            n_samples += 1
+
+            if actualLabel.item() != predictedLabel.item():
+                n_wrong += 1
+
+        error_rate = 100 * float(n_wrong / n_samples)
+        return error_rate , n_wrong , n_samples
 
         
 
@@ -159,7 +172,27 @@ class ClassificationEvaluator(object):
             n_wrong: Anzahl falsch klassifizierter Testbeispiele
             n_samples: Gesamtzahl von Testbeispielen
         """
-        raise NotImplementedError()
+        result = []
+        categoryErrorCounter = {}
+        categoryCounter = {}
+        for actualLabel , predictedLabel  in zip(self.__groundtruth_labels , self.__estimated_labels):
+            categoryCounter[actualLabel.item()] = categoryCounter.get(actualLabel.item(), 0) + 1
+            if actualLabel.item() != predictedLabel.item():
+                categoryErrorCounter[actualLabel.item()] = categoryErrorCounter.get(actualLabel.item() , 0) + 1
+        
+        categoryDone = set()
+        for label  in self.__groundtruth_labels:
+            label = label.item()
+            if label in categoryDone:
+                continue
+            categoryDone.add(label)
+            n_wrong = categoryErrorCounter.get(label , 0)
+            n_samples = categoryCounter.get(label ,0)
+            error_rate = 100 * float(n_wrong / n_samples)
+            result.append((label , error_rate , n_wrong ,  n_samples))
+        
+        return sorted(result , key=lambda item: item[0])
+
 
 
 
