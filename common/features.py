@@ -4,6 +4,7 @@ import numpy as np
 from collections import defaultdict
 from common.corpus import CorpusLoader
 from nltk.stem.porter import PorterStemmer  # IGNORE:import-error
+from collections import Counter
 import cv2
 
 
@@ -172,7 +173,17 @@ class BagOfWords(object):
                 Reihenfolge der Terme ist durch die Reihenfolge der Worter / Terme
                 im Vokabular (siehe __init__) vorgegeben.
         """
-        raise NotImplementedError()
+        result = {}
+        for cat , documentsWords in cat_word_dict.items():
+            numDocs = len(documentsWords)
+            result[cat] = np.zeros(shape=(numDocs , len(self.__vocabulary)))
+            for i  in range(len(documentsWords)):
+                documentWords = documentsWords[i]
+                c = Counter(documentWords)
+                wordFreqs = [c[vocWord] for vocWord in self.__vocabulary]
+                result[cat][i] =  wordFreqs
+            result[cat] = self.__term_weighting.weighting(result[cat])
+        return result
 
 
 
@@ -267,7 +278,6 @@ class WordListNormalizer(object):
                 result_2.append(stemmed_word)
 
 
-        print("result1" , result_1)
         return result_1 , result_2
 
 

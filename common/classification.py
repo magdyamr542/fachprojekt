@@ -1,6 +1,8 @@
 import numpy as np
-import scipy.spatial.distance
+from scipy.spatial.distance import cdist
 from common.features import BagOfWords, IdentityFeatureTransform
+from operator import itemgetter
+import operator
 
 
 
@@ -49,10 +51,21 @@ class KNNClassifier(object):
         
             mit d Testbeispielen und t dimensionalen Merkmalsvektoren.
         """
-        if self.__train_samples is None or self.__train_labels is None:
-            raise ValueError('Classifier has not been "estimated", yet!')
+        # calculate the distances
+        result = []
+        for i in range(len(test_samples)):
+            test_sample = test_samples[i]
+            d = cdist([test_sample] , self.__train_samples , metric=self.__metric)
+            sortedDistnces = np.argsort(d)
+            counter = {}
+            for index in sortedDistnces[:self.__k_neighbors]:
+                label = self.__train_labels[index][0]
+                counter[label.item()] = counter.get(label.item() , 0) + 1
+            label = max(counter.items(), key=operator.itemgetter(1))[0]
+            result.append((label,))
 
-        raise NotImplementedError()
+
+        return np.array(result)
 
 
 
