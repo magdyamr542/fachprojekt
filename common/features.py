@@ -66,7 +66,8 @@ class RelativeTermFrequencies(object):
             bow_mat: Numpy ndarray (d x t) mit *gewichteten* Bag-of-Words Frequenzen 
                 je Dokument (zeilenweise).
         """
-        raise NotImplementedError()
+        result = bow_mat / bow_mat.sum(axis = 1)[:,None]
+        return result
 
 
     def __repr__(self):
@@ -102,7 +103,22 @@ class RelativeInverseDocumentWordFrequecies(object):
                 Siehe Beschreibung des Parameters cat_word_dict in der Methode
                 BagOfWords.category_bow_dict.
         """
-        raise NotImplementedError()
+        self.vocabulary = vocabulary
+        self.category_wordlists_dict = category_wordlists_dict
+        # maps a term to the number of documents that contains the term
+        self.voc_dict = {}
+        nDocs = 0
+        for category , docWordLists in self.category_wordlists_dict.items():
+            for docWordList in docWordLists:
+                nDocs += 1
+                st = set(docWordList)
+                for term in self.vocabulary: 
+                    if term in st:
+                        self.voc_dict[term] = self.voc_dict.get(term,0) + 1 
+        
+        self.logValue = np.log([(nDocs / self.voc_dict.get(word , 1)) for word in self.vocabulary])
+
+
 
 
 
@@ -117,7 +133,8 @@ class RelativeInverseDocumentWordFrequecies(object):
             bow_mat: Numpy ndarray (d x t) mit *gewichteten* Bag-of-Words Frequenzen 
                 je Dokument (zeilenweise).
         """
-        raise NotImplementedError()
+        relative = bow_mat / bow_mat.sum(axis = 1)[:,None]
+        return relative * self.logValue
 
 
     def __repr__(self):

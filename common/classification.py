@@ -52,20 +52,21 @@ class KNNClassifier(object):
             mit d Testbeispielen und t dimensionalen Merkmalsvektoren.
         """
         # calculate the distances
-        result = []
-        for i in range(len(test_samples)):
-            test_sample = test_samples[i]
-            d = cdist([test_sample] , self.__train_samples , metric=self.__metric)
-            sortedDistnces = np.argsort(d)
-            counter = {}
-            for index in sortedDistnces[0][:self.__k_neighbors]:
-                label = self.__train_labels[index][0]
-                counter[label.item()] = counter.get(label.item() , 0) + 1
-            label = max(counter.items(), key=operator.itemgetter(1))[0]
-            result.append((label,))
-        
+        if self.__train_samples is None or self.__train_labels is None:
+                    raise ValueError('Classifier has not been "estimated", yet!')
+        else:
+            tst_labels = []
+            distances = cdist(test_samples, self.__train_samples, self.__metric)
+            sorted_indicies = np.argsort(distances,axis=1)
+            k_nearest_neighbours = sorted_indicies[:,:self.__k_neighbors]
+            for index_list in k_nearest_neighbours:
+                k_nearest_labels = (self.__train_labels[index_list])
+                label = BagOfWords.most_freq_words(k_nearest_labels.flatten(),1)
+                tst_labels.append(label)
+                
+            return np.array(tst_labels)
 
-        return np.array(result)
+
 
 
 

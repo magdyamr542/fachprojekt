@@ -146,10 +146,10 @@ class ClassificationEvaluator(object):
         n_samples = 0
 
         if mask is None:
-            mask = [np.array([True]) for _ in self.__estimated_labels]
+            mask = [True for _ in self.__estimated_labels]
 
         for actualLabel , predictedLabel , masked in zip(self.__groundtruth_labels , self.__estimated_labels , mask):
-            if not masked.item():
+            if not masked:
                 continue
                 
             n_samples += 1
@@ -157,7 +157,7 @@ class ClassificationEvaluator(object):
             if actualLabel.item() != predictedLabel.item():
                 n_wrong += 1
 
-        error_rate = 100 * float(n_wrong / n_samples)
+        error_rate = 100 * (n_wrong / n_samples)
         return error_rate , n_wrong , n_samples
 
         
