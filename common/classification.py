@@ -58,12 +58,12 @@ class KNNClassifier(object):
             d = cdist([test_sample] , self.__train_samples , metric=self.__metric)
             sortedDistnces = np.argsort(d)
             counter = {}
-            for index in sortedDistnces[:self.__k_neighbors]:
+            for index in sortedDistnces[0][:self.__k_neighbors]:
                 label = self.__train_labels[index][0]
                 counter[label.item()] = counter.get(label.item() , 0) + 1
             label = max(counter.items(), key=operator.itemgetter(1))[0]
             result.append((label,))
-
+        
 
         return np.array(result)
 
