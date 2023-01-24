@@ -12,13 +12,13 @@ class ClassificationEvaluatorTest(unittest.TestCase):
         self.__gt_labels = np.array([['A', 'C', 'B', 'A', 'B' ]]).T
 
     def test_error_rate(self):
-        
         class_eval = ClassificationEvaluator(self.__estimated_labels, self.__gt_labels)
         result = class_eval.error_rate()
         err_rate_ref = 20.0
         n_wrong_ref = 1
         n_samples_ref = self.__gt_labels.shape[0]
         result_ref = (err_rate_ref, n_wrong_ref, n_samples_ref)
+
         self.assertEqual(result, result_ref)
         self.assertEqual(result[0], 100 * float(result[1]) / result[2])
         

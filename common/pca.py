@@ -19,10 +19,11 @@ class PCAExample(object):
             raise ValueError('Invalid target dimension')
         
         self.__sub_origin, self.__sub_var, self.__sub_vs = self.__estimate_subspace(samples)
-        
+
         # Implementieren Sie die Dimensionsreduktion
         if target_dim != samples.shape[1]:
-            raise NotImplementedError()
+            self.__sub_var = self.__sub_var[:target_dim]
+            self.__sub_vs = self.__sub_vs[:, :target_dim]
 
         
     def __estimate_subspace(self, samples):
@@ -31,10 +32,10 @@ class PCAExample(object):
         Params:
             samples: ndarray mit Trainingsdaten (zeilenweise).
         
-        Returns: (Ergaenzen Sie die Dokumentation)
-            sub_origin:
-            sub_var:
-            sub_vs:
+        Returns:
+            sub_origin: mean
+            sub_var: eigenvalues
+            sub_vs: eigenvectors
         """
         n_samples = float(samples.shape[0])
         # Mittelwert der Stichprobe
@@ -62,10 +63,11 @@ class PCAExample(object):
         """
         if samples.shape[1] != self.__sub_vs.shape[0]:
             raise ValueError('Samples dimension does not match vector space transformation matrix')
-        
+
         # Ueberlegen Sie, wie man die gesamte samples Matrix in einem transformiert (ohne Schleife)
-        
-        raise NotImplementedError()
+        samples = samples - self.__sub_origin
+        samples = np.dot(samples, self.__sub_vs)
+        return samples
 
 
 
@@ -172,3 +174,10 @@ class Arrow3D(FancyArrowPatch):
         xs, ys, _ = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
         self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
         FancyArrowPatch.draw(self, renderer)   
+
+    def do_3d_projection(self, renderer=None):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
+        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+
+        return np.min(zs)

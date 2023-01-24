@@ -1,0 +1,20 @@
+T' * T = I
+D' * D = I
+
+X = T * S * D'
+
+X: t * d
+T: t * m    T': m * t
+S: m * m
+D': m * d
+
+Nach D umstellen:
+
+X = T * S * D' | * T^-1
+T' * X = S * D' | * S^-1
+S^-1 * T' * X = D' 
+(S^-1 * T' * X)' = D
+((S^-1 * T') * X)' = D
+X' * (S^-1 * T')' = D
+
+X' * T * S^-1' = D

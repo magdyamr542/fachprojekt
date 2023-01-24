@@ -2,7 +2,7 @@ import unittest
 
 from common.features import (
     BagOfWords,
-    RelativeInverseDocumentWordFrequecies,
+    RelativeInverseDocumentWordFrequencies,
     RelativeTermFrequencies,
     TopicFeatureTransform,
     WordListNormalizer,
@@ -123,14 +123,13 @@ class TermFrequenciesTest(unittest.TestCase):
     def test_inverse_document_frequencies(self):
         vocabulary = BagOfWordsTest.vocabulary()
         cat_wordlist_dict = BagOfWordsTest.cat_wordlist_dict()
-        tfidf = RelativeInverseDocumentWordFrequecies(vocabulary,
+        tfidf = RelativeInverseDocumentWordFrequencies(vocabulary,
                                                       cat_wordlist_dict)
         self.assertEqual(self.__bow_mat_short.shape[1], len(vocabulary))
         bow_weighted_short = tfidf.weighting(self.__bow_mat_short)
         bow_weighted_short_ref = np.array([[ 0., 0., 0., 0.01335314, 0.,
                                              0.1386294, 0.]])
         np.testing.assert_almost_equal(bow_weighted_short, bow_weighted_short_ref)
-
         self.assertEqual(self.__bow_mat_long.shape[1], len(vocabulary))
         bow_weighted_long = tfidf.weighting(self.__bow_mat_long)
         bow_weighted_long_ref = np.array([[ 0., 0., 0., 0.0667657,
@@ -157,6 +156,7 @@ class TopicFeatureTransformTest(unittest.TestCase):
                                         [0, 0, 5],
                                         [5, 5, 0],
                                         [0, 5, 5]])
+
     def test_estimate(self):
         T_mat_ref = np.array([[-0.41334067, 0.8048751, 0.42582339],
                               [-0.76349026, -0.05150169, -0.64376254],
@@ -173,7 +173,7 @@ class TopicFeatureTransformTest(unittest.TestCase):
         S_inv_mat = feature_trans._TopicFeatureTransform__S_inv  # IGNORE:protected-access
         np.testing.assert_array_almost_equal(T_mat, T_mat_ref)
         np.testing.assert_array_almost_equal(S_inv_mat, S_inv_mat_ref)
-        
+
         feature_trans = TopicFeatureTransform(topic_dim=2)
         feature_trans.estimate(self.__train_samples, train_labels=None)
         T_mat = feature_trans._TopicFeatureTransform__T  # IGNORE:protected-access
