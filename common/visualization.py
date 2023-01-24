@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from matplotlib.patches import Circle, Rectangle
+from matplotlib.lines import Line2D
 
 
 def hbar_plot(x_values, y_labels, x_err=None, title=None):
@@ -60,3 +63,20 @@ def bar_plot(x_values, y_values, y_err=None, title=None):
     plt.show()
 
 
+def plot_results(doc_arr: np.ndarray, results: list, title=None, row_cols=4):
+    fig = plt.figure(figsize=(10, 6))
+    main_title = "Best matching windows in document"
+    if title is not None:
+        main_title += " " + title
+    fig.suptitle(main_title)
+
+    for idx, info in enumerate(results):
+        if idx == row_cols**2:
+            break
+
+        wx, wy, wxx, wyy = info['window']
+        ax = fig.add_subplot(row_cols, row_cols, idx + 1)
+        subimg = doc_arr[wy:wyy, wx:wxx]
+        ax.imshow(subimg, cmap=cm.get_cmap('Greys_r'))
+    
+    plt.show()

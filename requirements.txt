@@ -6,3 +6,5 @@ nltk
 opencv-python
 numpy
 scipy
+pandas
+

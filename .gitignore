@@ -2,4 +2,4 @@ venv
 *.pdf
 __pycache__
 .DS_Store
-
+pickle_data

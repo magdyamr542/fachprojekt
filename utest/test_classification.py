@@ -35,6 +35,7 @@ class ClassificationTest(unittest.TestCase):
         np.testing.assert_equal(result_labels, result_labels_ref)
 
     def test_knn(self):
+        DEBUG = False
         print('knn_test')
         knn = KNNClassifier(k_neighbors=3, metric='cityblock')
         knn.estimate(self.__train_samples, self.__train_labels)

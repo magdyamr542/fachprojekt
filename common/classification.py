@@ -1,12 +1,11 @@
 import numpy as np
-import scipy.spatial.distance
-from common.features import BagOfWords, IdentityFeatureTransform
-
+from scipy.spatial.distance import cdist
+from common.features import BagOfWords
 
 
 class KNNClassifier(object):
 
-    def __init__(self, k_neighbors, metric):
+    def __init__(self, k_neighbors: int, metric):
         """Initialisiert den Klassifikator mit Meta-Parametern
         
         Params:
@@ -52,7 +51,29 @@ class KNNClassifier(object):
         if self.__train_samples is None or self.__train_labels is None:
             raise ValueError('Classifier has not been "estimated", yet!')
 
-        raise NotImplementedError()
+        result_labels = np.array([])
+        for sample in test_samples:
+            distances = cdist(self.__train_samples, [sample], self.__metric)
+
+            if self.__k_neighbors == 1:
+                label = self.__train_labels[np.argmin(distances)]
+            else:
+                label_dist = np.column_stack((self.__train_labels, distances))
+                label_dist = label_dist[label_dist[:, 1].astype(np.float64).argsort()]
+
+                k_nearest_labels = label_dist[0:self.__k_neighbors, 0]
+
+                # Majority vote mit most_freq_words
+                label = BagOfWords.most_freq_words(k_nearest_labels, n_words=1)
+
+            if result_labels.shape[0] == 0:
+                result_labels = np.array([label])
+            else:
+                result_labels = np.row_stack((result_labels, [label]))
+
+        return np.asarray(result_labels)
+
+            
 
 
 
