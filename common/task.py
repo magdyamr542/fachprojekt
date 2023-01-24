@@ -179,10 +179,11 @@ def intersection_over_union(box1: tuple[int, int, int, int], box2: tuple[int, in
 def get_bag_of_feature_labels_count(frames: np.ndarray, labels: np.ndarray, n_clusters, x1, y1, x2, y2) -> np.ndarray:
     """Get for each descriptor its corresponding cluster label and count them."""
     count_arr = np.zeros(n_clusters, dtype='int')
-    # TODO: binary search to min index of current window
 
     for idx, frame in enumerate(frames):
-        if frame[1] < x1 or frame[1] > x2 or frame[0] < y1 or frame[0] > y2:
+        if frame[0] > y2:
+            break
+        if frame[1] < x1 or frame[1] > x2 or frame[0] < y1:
             continue
         else:
             count_arr[labels[idx]] += 1
