@@ -98,14 +98,11 @@ def get_best_bag_of_features_histograms(
         print("starting sliding window computations")
 
     while wyy < doc_arr.shape[0]:
-        time0 = time.process_time()
         bof = get_bag_of_feature_labels_count(doc_frames, labels, n_centroids, wx, wy, wxx, wyy)
         w_bofs.append({
             'window': (wx, wy, wxx, wyy),
             'bof': bof
         })
-        time1 = time.process_time()
-        print(f"Needed {time1 - time0}")
 
         wx += step_size
         wxx = wx + wwidth
