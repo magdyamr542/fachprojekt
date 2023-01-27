@@ -78,12 +78,10 @@ def get_best_bag_of_features_histograms(
         bool_idx = doc_frames[:, 0] >= row
         row_subframes = doc_frames[bool_idx]
         row_sublabels = labels[bool_idx]
-        # print(row_subframes.shape)
 
         bool_idx = row_subframes[:, 0] <= row_end
         row_subframes = row_subframes[bool_idx]
         row_sublabels = row_sublabels[bool_idx]
-        # print(row_subframes.shape)
 
         for col in range(0, doc_arr.shape[1], step_size_x):
             col_end = col + wwidth

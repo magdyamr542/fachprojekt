@@ -212,10 +212,7 @@ class SegmentfreeWordSpottingEvaluator(object):
         self.__rel_threshold = rel_threshold
         self.__plot_results = plot_results
 
-    def validate(self, 
-            evaluate_indices: list[int] | None=None, 
-            max_eval_length=10
-        ) -> tuple[float, float, float]:
+    def validate(self, max_eval_length=10) -> tuple[float, float, float]:
         # average_precision, average_recall, all_precisions, all_recalls
         """Validates all words in the given document.
 
@@ -227,16 +224,10 @@ class SegmentfreeWordSpottingEvaluator(object):
         """
         overall_precisions: list[float] = []
         overall_recalls: list[float] = []
-        indices: list[int] = []
-
-        if evaluate_indices is not None:
-            indices.extend(evaluate_indices)
-        else:
-            indices.extend(range(len(self.__visual_words)))
 
         print(f"Evaluating {self.__img_path} with {len(self.__visual_words)} words")
 
-        for idx in indices:
+        for idx in range(len(self.__visual_words)):
             print(f"Validating image '{self.__img_path}' with word {idx}")
             prec, rec = self.crossvalidate(idx, max_eval_length)
             overall_precisions.append(prec)
