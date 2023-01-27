@@ -4,7 +4,7 @@ import PIL.Image as Image
 
 from scipy.cluster.vq import kmeans2
 from collections import deque
-from os.path import abspath, join, exists as path_exists
+from os.path import abspath, join
 
 from common.features import compute_sift_descriptors
 
@@ -15,68 +15,42 @@ def get_best_bag_of_features_histograms(
     coords: tuple[int, int, int, int],
     n_centroids: int,
     step_size=20,
-    size=None,
+    size=-1,
     iters=20) -> list:
     """
     Params:
         img_path: Path to image file
         coords: (x1, y1, x2, y2) coordinates of the request image
         n_centroids: number of centroids used for the clustering
-        step_size: the step size for computing sift descriptors of the main document. If 0, step_size = cell_size // 4
+        step_size_x: the step size for computing sift descriptors of the main document.
         size: Uses the value as cell size [Default = smaller request window dimension]
         iters: max iterations for clustering found features in main document
     """
-    DEBUG = False
-    INFO = True
+    INFO = False
 
     # load main document and crop the request document
     x1, y1, x2, y2 = coords
-    document = Image.open(path_join('pages', '2700270.png'))
+    document = Image.open(path_join('pages', img_path))
     doc_arr = np.asarray(document, dtype='uint8')
     req_arr = doc_arr[y1:y2, x1:x2]
 
-    if size is None:
+    if size == -1:
         cell_size = min(req_arr.shape)
     else:
         cell_size = size
 
-    if step_size == 0:
-        step_size = cell_size // 4
-
-    subpath = img_path.rsplit('.', 1)[0]
-    subpath = f"{subpath}_{cell_size}_sift-{step_size}_descriptors.p"
-    pickle_path = path_join('pickle_data', 'sift_descriptors', subpath)
-
     if INFO:
         print(f"Using {cell_size=} and {step_size=}")
 
-    # TODO: uncomment
-    if path_exists(pickle_path) and False:
-        if INFO:
-            print(f"Loading pickled sift descriptors from file...")
-
-        with open(pickle_path, 'rb') as fh:
-            doc_frames, doc_desc = pickle.load(fh)
-            doc_frames = np.asarray(doc_frames)
-    else:
-        # compute sift descriptors and pickle afterwards
-        if INFO:
-            print(f"Computing sift descriptors and pickling afterwards...")
-
-        doc_frames, doc_desc = compute_sift_descriptors(doc_arr, cell_size=cell_size, step_size=step_size)
-        doc_frames = np.asarray(doc_frames)
-
-        with open(pickle_path, 'wb') as fh:
-            to_dump = (doc_frames, doc_desc)
-            pickle.dump(to_dump, fh)
-
+    doc_frames, doc_desc = compute_sift_descriptors(doc_arr, cell_size=5, step_size=20)
+    doc_frames = np.asarray(doc_frames, dtype='int')
 
     if INFO:
         print(f"Clustering... {len(doc_desc)} descriptors to {n_centroids} clusters")
     
-    # cluster most significant features
+    # cluster features for discrete distinction
     _, labels = kmeans2(doc_desc, n_centroids, iter=iters, minit='points')
-    labels = np.array(labels, dtype='int')
+    labels = np.asarray(labels, dtype='int')
 
     # get request image bag of features
     req_img_bof = get_bag_of_feature_labels_count(doc_frames, labels, n_centroids, x1, y1, x2, y2)
@@ -85,52 +59,76 @@ def get_best_bag_of_features_histograms(
     wheight = y2 - y1
     wwidth = x2 - x1
 
-    # base coordinates for moving window
-    wx = 0
-    wy = 0
-    wxx = wwidth
-    wyy = wheight
+    # use smaller x step size because language is written row-wise
+    step_size_x = step_size // 2
+    step_size_y = step_size
 
     # store all results in a list like [{'window': (x1, y1, x2, y2), 'bof': bof}]
     w_bofs = []
 
     if INFO:
-        print("starting sliding window computations")
+        print("Starting sliding window computations")
 
-    while wyy < doc_arr.shape[0]:
-        bof = get_bag_of_feature_labels_count(doc_frames, labels, n_centroids, wx, wy, wxx, wyy)
-        w_bofs.append({
-            'window': (wx, wy, wxx, wyy),
-            'bof': bof
-        })
-
-        wx += step_size
-        wxx = wx + wwidth
-        
-        # check if row done
-        if wxx > doc_arr.shape[1]:
-            wx = 0
-            wxx = wwidth
-            wy = wy + step_size
-            wyy = wy + wheight
-
-            if DEBUG:
-                print("Computing row...", wy)
+    acc_inner_time = .0
+    start_outer_time = time.process_time()
     
-    if INFO:
-        print(f"Generated {len(w_bofs)} bag of feature counts")
+    for row in range(0, doc_arr.shape[0], step_size_y):
+        row_end = row + wheight
 
-    # compare all computed histograms to request image
-    for subw in w_bofs:
-        subw['diff'] = np.abs(subw['bof'] - req_img_bof).sum()
+        bool_idx = doc_frames[:, 0] >= row
+        row_subframes = doc_frames[bool_idx]
+        row_sublabels = labels[bool_idx]
+        # print(row_subframes.shape)
+
+        bool_idx = row_subframes[:, 0] <= row_end
+        row_subframes = row_subframes[bool_idx]
+        row_sublabels = row_sublabels[bool_idx]
+        # print(row_subframes.shape)
+
+        for col in range(0, doc_arr.shape[1], step_size_x):
+            col_end = col + wwidth
+            start_inner_time = time.process_time()
+            bof = get_bag_of_feature_labels_count(row_subframes, row_sublabels, n_centroids, col, row, col_end, row_end)
+            end_inner_time = time.process_time()
+            acc_inner_time += end_inner_time - start_inner_time
+            
+            # compare computed histograms to request image
+            w_bofs.append({
+                'window': (col, row, col_end, row_end),
+                'bof': bof,
+                'diff': np.abs(bof - req_img_bof).sum()
+            })
+
+    end_outer_time = time.process_time()
+    print(f"outer time (sliding window): {end_outer_time - start_outer_time}")
+    print(f"acc inner time (bof_label_count): {acc_inner_time}")
 
     if INFO:
+        print(f"Generated {len(w_bofs)=} bag of feature counts")
         print("Applying non-maximum-suppression...")
 
     # use non-maximum-suppression to reduce overlapping frames
+    start_outer_time = time.process_time()
     final_bofs = non_maximum_suppresion(w_bofs)
+    end_outer_time = time.process_time()
+    print(f"time nms: {end_outer_time - start_outer_time}")
 
     return final_bofs
+
+
+def get_bag_of_feature_labels_count(frames: np.ndarray, labels: np.ndarray, n_clusters, x1, y1, x2, y2) -> np.ndarray:
+    """Get for each descriptor its corresponding cluster label and count them."""
+    count_arr = np.zeros(n_clusters, dtype='int')
+
+    for idx, frame in enumerate(frames):
+        if frame[0] > y2: 
+            break
+        elif frame[1] < x1 or frame[1] > x2 or frame[0] < y1:
+            continue
+        else:
+            count_arr[labels[idx]] += 1
+    
+    return count_arr
 
 
 def non_maximum_suppresion(all_bofs: list) -> list:
@@ -144,7 +142,7 @@ def non_maximum_suppresion(all_bofs: list) -> list:
     while len(all_bofs) > 0:
         mbof = all_bofs.pop(0)
         sub_results.append(mbof)
-        w = mbof['window']
+        w: tuple[int, int, int, int] = mbof['window']
 
         for bof in all_bofs:
             if intersection_over_union(w, bof['window']) >= 0.5:
@@ -155,7 +153,7 @@ def non_maximum_suppresion(all_bofs: list) -> list:
         sub_results = deque(sorted(sub_results, key=lambda x: x['diff']))
 
         if len(sub_results) > 0:
-            result_bofs.append(sub_results[0])
+            result_bofs.append(sub_results.popleft())
 
         sub_results.clear()
 
@@ -174,21 +172,6 @@ def intersection_over_union(box1: tuple[int, int, int, int], box2: tuple[int, in
     iou = intersection_area / (box1_area + box2_area - intersection_area)
 
     return iou
-
-
-def get_bag_of_feature_labels_count(frames: np.ndarray, labels: np.ndarray, n_clusters, x1, y1, x2, y2) -> np.ndarray:
-    """Get for each descriptor its corresponding cluster label and count them."""
-    count_arr = np.zeros(n_clusters, dtype='int')
-
-    for idx, frame in enumerate(frames):
-        if frame[0] > y2:
-            break
-        if frame[1] < x1 or frame[1] > x2 or frame[0] < y1:
-            continue
-        else:
-            count_arr[labels[idx]] += 1
-
-    return count_arr
 
 
 def path_join(*args):
