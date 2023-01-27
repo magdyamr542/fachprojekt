@@ -229,7 +229,7 @@ class SegmentfreeWordSpottingEvaluator(object):
 
         print(f"Evaluating {self.__img_path} with {len(self.__visual_words)} words")
 
-        for idx in range(len(self.__visual_words))[:1]:
+        for idx in range(len(self.__visual_words)):
             print(f"Validating image '{self.__img_path}' with word {idx}")
             simple_precision, simple_recall, mean_prec = self.crossvalidate(idx, max_eval_length)
             overall_precision.append(simple_precision)
