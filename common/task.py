@@ -7,8 +7,6 @@ from os.path import abspath, join
 
 from common.features import compute_sift_descriptors
 
-import time
-
 def get_best_bag_of_features_histograms(
         img_path: str, 
         coords: tuple[int, int, int, int],
@@ -27,7 +25,6 @@ def get_best_bag_of_features_histograms(
         iters: max iterations for clustering found features in main document
     """
     INFO = False
-    TIMING = False
 
     # load main document and crop the request document
     x1, y1, x2, y2 = coords
