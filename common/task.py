@@ -1,5 +1,4 @@
 import numpy as np
-import pickle
 import PIL.Image as Image
 
 from scipy.cluster.vq import kmeans2
@@ -11,12 +10,13 @@ from common.features import compute_sift_descriptors
 import time
 
 def get_best_bag_of_features_histograms(
-    img_path: str, 
-    coords: tuple[int, int, int, int],
-    n_centroids: int,
-    step_size=20,
-    size=-1,
-    iters=20) -> list:
+        img_path: str, 
+        coords: tuple[int, int, int, int],
+        n_centroids: int,
+        step_size=20,
+        size=-1,
+        iters=20
+    ) -> list:
     """
     Params:
         img_path: Path to image file
@@ -27,6 +27,7 @@ def get_best_bag_of_features_histograms(
         iters: max iterations for clustering found features in main document
     """
     INFO = False
+    TIMING = False
 
     # load main document and crop the request document
     x1, y1, x2, y2 = coords
@@ -34,7 +35,7 @@ def get_best_bag_of_features_histograms(
     doc_arr = np.asarray(document, dtype='uint8')
     req_arr = doc_arr[y1:y2, x1:x2]
 
-    if size == -1:
+    if size < 1:
         cell_size = min(req_arr.shape)
     else:
         cell_size = size
@@ -69,9 +70,6 @@ def get_best_bag_of_features_histograms(
     if INFO:
         print("Starting sliding window computations")
 
-    acc_inner_time = .0
-    start_outer_time = time.process_time()
-    
     for row in range(0, doc_arr.shape[0], step_size_y):
         row_end = row + wheight
 
@@ -85,10 +83,7 @@ def get_best_bag_of_features_histograms(
 
         for col in range(0, doc_arr.shape[1], step_size_x):
             col_end = col + wwidth
-            start_inner_time = time.process_time()
             bof = get_bag_of_feature_labels_count(row_subframes, row_sublabels, n_centroids, col, row, col_end, row_end)
-            end_inner_time = time.process_time()
-            acc_inner_time += end_inner_time - start_inner_time
             
             # compare computed histograms to request image
             w_bofs.append({
@@ -97,21 +92,44 @@ def get_best_bag_of_features_histograms(
                 'diff': np.abs(bof - req_img_bof).sum()
             })
 
-    end_outer_time = time.process_time()
-    print(f"outer time (sliding window): {end_outer_time - start_outer_time}")
-    print(f"acc inner time (bof_label_count): {acc_inner_time}")
-
     if INFO:
         print(f"Generated {len(w_bofs)=} bag of feature counts")
         print("Applying non-maximum-suppression...")
 
     # use non-maximum-suppression to reduce overlapping frames
-    start_outer_time = time.process_time()
     final_bofs = non_maximum_suppresion(w_bofs)
-    end_outer_time = time.process_time()
-    print(f"time nms: {end_outer_time - start_outer_time}")
 
     return final_bofs
+
+
+def non_maximum_suppresion(all_bofs: list) -> list:
+    """
+    Params:
+        - all_bofs - list of {'window': np.array(x1, y1, x2, y2), 'bof': sift descriptor for window, 'diff': difference to request image descriptor}
+    """
+    result_bofs = []
+    sub_results = deque()
+
+    for mbof in all_bofs:
+        sub_results.append(mbof)
+        win: tuple[int, int, int, int] = mbof['window']
+
+        for bof in all_bofs:
+            bof_win: tuple[int, int, int, int] = bof['window']
+            
+            if intersection_over_union(win, bof_win) >= 0.5:
+                sub_results.append(bof)
+                all_bofs.remove(bof)
+
+        # use best bof from sub_results and add to result_bofs
+        sub_results_sorted = sorted(sub_results, key=lambda x: x['diff'])
+
+        if len(sub_results_sorted) > 0:
+            result_bofs.append(sub_results_sorted[0])
+
+        sub_results.clear()
+
+    return sorted(result_bofs, key=lambda x: x['diff'])
 
 
 def get_bag_of_feature_labels_count(frames: np.ndarray, labels: np.ndarray, n_clusters, x1, y1, x2, y2) -> np.ndarray:
@@ -129,36 +147,12 @@ def get_bag_of_feature_labels_count(frames: np.ndarray, labels: np.ndarray, n_cl
     return count_arr
 
 
-def non_maximum_suppresion(all_bofs: list) -> list:
-    """
-    Params:
-        - all_bofs - list of {'window': (x1, y1, x2, y2), 'bof': sift descriptor for window, 'diff': difference to request image descriptor}
-    """
-    result_bofs = []
-    sub_results = deque()
-
-    while len(all_bofs) > 0:
-        mbof = all_bofs.pop(0)
-        sub_results.append(mbof)
-        w: tuple[int, int, int, int] = mbof['window']
-
-        for bof in all_bofs:
-            if intersection_over_union(w, bof['window']) >= 0.5:
-                sub_results.append(bof)
-                all_bofs.remove(bof)
-        
-        # use best bof from sub_results and add to result_bofs
-        sub_results = deque(sorted(sub_results, key=lambda x: x['diff']))
-
-        if len(sub_results) > 0:
-            result_bofs.append(sub_results.popleft())
-
-        sub_results.clear()
-
-    return sorted(result_bofs, key=lambda x: x['diff'])
-
-
 def intersection_over_union(box1: tuple[int, int, int, int], box2: tuple[int, int, int, int]) -> float:
+    """Params:
+        box1: (x1, y1, x2, y2)
+        box2: (x1, y1, x2, y2)
+    Returns:
+        Value between 0 and 1 depending on the overlap of box1 and box2."""
     x1 = max(box1[0], box2[0])
     y1 = max(box1[1], box2[1])
     x2 = min(box1[2], box2[2])

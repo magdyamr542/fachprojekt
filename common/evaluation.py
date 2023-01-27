@@ -192,8 +192,7 @@ class SegmentfreeWordSpottingEvaluator(object):
         img_path: str, 
         n_centroids: int,
         step_size: int,
-        rel_threshold=0.5,
-        plot_results=False
+        rel_threshold=0.5
     ) -> None:
         """
         Params:
@@ -210,7 +209,6 @@ class SegmentfreeWordSpottingEvaluator(object):
         self.__step_size = step_size
         self.__visual_words = load_ground_truths(self.__img_path.rsplit('.')[0])
         self.__rel_threshold = rel_threshold
-        self.__plot_results = plot_results
 
     def validate(self, max_eval_length=10) -> tuple[float, float, float]:
         # average_precision, average_recall, all_precisions, all_recalls
@@ -220,22 +218,31 @@ class SegmentfreeWordSpottingEvaluator(object):
             max_eval_length: Maximum length for evaluation list to check if results are relevant
 
         Returns:
-            (average_precision, average_recall, meanall_precisions, all_recalls)
+            (average_precision, 
+             average_recall,
+             avg_mean_prec,
+             overall_precision, 
+             overall_recall,
+             overall_mean_prec)
         """
-        overall_precisions: list[float] = []
-        overall_recalls: list[float] = []
+        overall_precision: list[float] = []
+        overall_recall: list[float] = []
+        overall_mean_prec: list[float] = []
 
         print(f"Evaluating {self.__img_path} with {len(self.__visual_words)} words")
 
         for idx in range(len(self.__visual_words)):
             print(f"Validating image '{self.__img_path}' with word {idx}")
-            prec, rec = self.crossvalidate(idx, max_eval_length)
-            overall_precisions.append(prec)
-            overall_recalls.append(rec)
+            simple_precision, simple_recall, mean_prec = self.crossvalidate(idx, max_eval_length)
+            overall_precision.append(simple_precision)
+            overall_recall.append(simple_recall)
+            overall_mean_prec.append(mean_prec)
 
-        avg_prec = sum(overall_precisions) / len(overall_precisions)
-        avg_rec = sum(overall_recalls) / len(overall_recalls)
-        return avg_prec, avg_rec, overall_precisions, overall_recalls
+        avg_prec = sum(overall_precision) / len(overall_precision)
+        avg_rec = sum(overall_recall) / len(overall_recall)
+        avg_mean_prec = sum(overall_mean_prec) / len(overall_mean_prec)
+
+        return avg_prec, avg_rec, avg_mean_prec, overall_precision, overall_recall, overall_mean_prec 
 
     def crossvalidate(self, word_index: int, max_eval_length=10) -> tuple[float, float, float]:
         """Validates the word at index `word_index` in the given document.
@@ -272,11 +279,6 @@ class SegmentfreeWordSpottingEvaluator(object):
         simple_precision = sum(is_rel) / len(rel_results)
         simple_recall = sum(is_rel) / len(rel_words)
         mean_prec, _ = SegmentfreeWordSpottingEvaluator.__mean_precision(is_rel, len(rel_words))
-
-        if self.__plot_results:
-            doc_arr = np.asarray(Image.open(path_join('pages', self.__img_path)), dtype='uint8')
-            tt = str(simple_precision) + ":" + str(simple_recall) + ":" + str(mean_prec)
-            plot_results(doc_arr, rel_results, len(rel_results), title=tt)
 
         return simple_precision, simple_recall, mean_prec
 
