@@ -208,7 +208,7 @@ class SegmentfreeWordSpottingEvaluator(object):
         self.__visual_words = load_ground_truths(self.__img_path.rsplit('.')[0])
         self.__rel_threshold = rel_threshold
 
-    def validate(self, max_eval_length=10) -> tuple[float, float, float]:
+    def validate(self, max_eval_length=10) -> tuple[float, float, float, list[float], list[float], list[float]]:
         # average_precision, average_recall, all_precisions, all_recalls
         """Validates all words in the given document.
 
