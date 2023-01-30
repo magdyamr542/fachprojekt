@@ -190,6 +190,7 @@ class SegmentfreeWordSpottingEvaluator(object):
         img_path: str, 
         n_centroids: int,
         step_size: int,
+        unique_words=True,
         rel_threshold=0.5
     ) -> None:
         """
@@ -197,6 +198,7 @@ class SegmentfreeWordSpottingEvaluator(object):
             img_path: Path to image
             n_centroids: Number of clusters for features
             step_size: Size of steps for sift descriptors
+            unique_words: Filter all ground truth words in order to process each word only once. Otherwise, duplicates get processed more than once.
             rel_treshold: Threshold for relevant findings
         """
         if rel_threshold < 0 or rel_threshold > 1:
@@ -205,6 +207,7 @@ class SegmentfreeWordSpottingEvaluator(object):
         self.__img_path = img_path
         self.__n_centroids = n_centroids
         self.__step_size = step_size
+        self.__unique_words = unique_words
         self.__visual_words = load_ground_truths(self.__img_path.rsplit('.')[0])
         self.__rel_threshold = rel_threshold
 
@@ -227,9 +230,11 @@ class SegmentfreeWordSpottingEvaluator(object):
         overall_recall: list[float] = []
         overall_mean_prec: list[float] = []
 
-        print(f"Evaluating {self.__img_path} with {len(self.__visual_words)} words")
+        print(f"Evaluating {self.__img_path} with {len(self.__visual_words)} words (with duplicates)")
 
-        for idx in range(len(self.__visual_words)):
+        word_idxs = range(len(self.__visual_words))
+
+        for idx in word_idxs:
             print(f"Validating image '{self.__img_path}' with word {idx}")
             simple_precision, simple_recall, mean_prec = self.crossvalidate(idx, max_eval_length)
             overall_precision.append(simple_precision)

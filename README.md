@@ -10,21 +10,39 @@
             - prec=0.6 rec=0.857 mean_prec=0.857
         - n_centroids: 200 - step_size: 30 - max_eval_length: 10
             - prec=0.6 rec=0.857 mean_prec=0.857
+
+        - n_centroids: 100 - step_size: 20 - max_eval_length: 10
+            - prec=0.8 rec=1.143 mean_prec=1.143
+        - n_centroids: 150 - step_size: 20 - max_eval_length: 10
+            - prec=0.7 rec=1.0 mean_prec=0.968
         - n_centroids: 200 - step_size: 20 - max_eval_length: 10
             - prec=0.8 rec=1.143 mean_prec=1.109
+
+        - n_centroids: 100 - step_size: 10 - max_eval_length: 10
+            - prec=0.8 rec=1.143 mean_prec=1.114
+        - n_centroids: 150 - step_size: 10 - max_eval_length: 10
+            - prec=0.8 rec=1.143 mean_prec=1.127
         - n_centroids: 200 - step_size: 10 - max_eval_length: 10
             - prec=0.9 rec=1.286 mean_prec=1.286
+
     - instructions (4)
         - n_centroids: 100 - step_size: 30 - max_eval_length: 10
             - prec=0.7 rec=3.5 mean_prec=3.279
+        - n_centroids: 100 - step_size: 20 - max_eval_length: 10
+            - prec=1.0 rec=5.0 mean_prec=5.0
+
         - n_centroids: 150 - step_size: 30 - max_eval_length: 10
             - prec=0.8 rec=4.0 mean_prec=3.838
+        - n_centroids: 150 - step_size: 20 - max_eval_length: 10
+            - prec=1.0 rec=5.0 mean_prec=5.0
+
         - n_centroids: 200 - step_size: 30 - max_eval_length: 10
             - prec=0.7 rec=3.5 mean_prec=3.366
         - n_centroids: 200 - step_size: 20 - max_eval_length: 10
             - prec=1.0 rec=5.0 mean_prec=5.0
         - n_centroids: 200 - step_size: 10 - max_eval_length: 10
             - prec=1.0 rec=5.0 mean_prec=5.0
+
     - october (5)
         - n_centroids: 100 - step_size: 30 - max_eval_length: 10
             - prec=0.6 rec=2.0 mean_prec=2.0

@@ -16,7 +16,7 @@ def get_best_bag_of_features_histograms(
         iters=20
     ) -> list:
     """
-    Params:
+    `Params`:
         img_path: Path to image file
         coords: (x1, y1, x2, y2) coordinates of the request image
         n_centroids: number of centroids used for the clustering
@@ -94,7 +94,8 @@ def get_best_bag_of_features_histograms(
         print("Applying non-maximum-suppression...")
 
     # use non-maximum-suppression to reduce overlapping frames
-    final_bofs = non_maximum_suppresion(w_bofs)
+    #w_bofs = sorted(w_bofs, key=lambda x: x['diff'])
+    final_bofs = non_maximum_suppresion(w_bofs[:5000])
 
     return final_bofs
 
@@ -102,18 +103,21 @@ def get_best_bag_of_features_histograms(
 def non_maximum_suppresion(all_bofs: list) -> list:
     """
     Params:
-        - all_bofs - list of {'window': np.array(x1, y1, x2, y2), 'bof': sift descriptor for window, 'diff': difference to request image descriptor}
+        all_bofs: list of {'window': np.array(x1, y1, x2, y2), 'bof': sift descriptor for window, 'diff': difference to request image descriptor}
     """
     result_bofs = []
     sub_results = deque()
+    
+    print(f"Starting with {len(all_bofs)=}")
 
-    for mbof in all_bofs:
+    while all_bofs:
+        mbof = all_bofs.pop(0)
         sub_results.append(mbof)
         win: tuple[int, int, int, int] = mbof['window']
 
         for bof in all_bofs:
             bof_win: tuple[int, int, int, int] = bof['window']
-            
+
             if intersection_over_union(win, bof_win) >= 0.5:
                 sub_results.append(bof)
                 all_bofs.remove(bof)
@@ -126,10 +130,17 @@ def non_maximum_suppresion(all_bofs: list) -> list:
 
         sub_results.clear()
 
+    print(f"Ending with {len(result_bofs)=}")
+
     return sorted(result_bofs, key=lambda x: x['diff'])
 
 
-def get_bag_of_feature_labels_count(frames: np.ndarray, labels: np.ndarray, n_clusters, x1, y1, x2, y2) -> np.ndarray:
+def get_bag_of_feature_labels_count(
+        frames: np.ndarray, 
+        labels: np.ndarray, 
+        n_clusters, 
+        x1, y1, x2, y2
+    ) -> np.ndarray:
     """Get for each descriptor its corresponding cluster label and count them."""
     count_arr = np.zeros(n_clusters, dtype='int')
 
